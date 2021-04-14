@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LiteBoard</title>
+    <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+    <div id="toolbox">
+        <button id="btnNew" class="tool">&#128196;</button>
+        <button id="btnImport" class="tool">&#128194;</button>
+        <button id="btnPrev" class="tool">&#129144;</button>
+        <button id="btnNext" class="tool">&#129146;</button>
+        <button id="btnPen" class="tool">&#128393;</button>
+        <button id="btnHighlight" class="tool">&#128397;</button>
+        <button id="btnEraser" class="tool">&#129533;</button>
+        <label for="sldWidth">Line width:</label>
+        <input type="range" min="1" max="30" id="sldWidth" value="2" step="2">
+        <div id="palette">
+            <button id="btnRed" class="tool color"></button>
+            <button id="btnGreen" class="tool color"></button>
+            <button id="btnBlue" class="tool color"></button>
+            <button id="btnCyan" class="tool color"></button>
+            <button id="btnMagenta" class="tool color"></button>
+            <button id="btnYellow" class="tool color"></button>
+            <button id="btnBlack" class="tool color"></button>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <div id="thumbs">Pages</div>
+
+    <canvas id="board" width="800px" height="600px">
+
+    </canvas>
+
+
+    <script src="board.js"></script>
+</body>
+</html>

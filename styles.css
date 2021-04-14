@@ -1,0 +1,61 @@
+#board {
+    background-color: white;
+    border: 1px solid grey;
+    box-shadow: 3px 3px 3px black;
+    grid-row: 2;
+    grid-column: 2;
+    display: block;
+ }
+
+body {
+    display: grid;
+    grid-gap: 5px;
+    height: 100%;
+    grid-template-rows: 40px auto;
+    grid-template-columns: 100px auto;
+    user-select: none;
+}
+
+#toolbox{
+    grid-column-start: 1;
+    grid-column-end: 3;
+    grid-row: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    line-height: 16pt;
+}
+
+.tool{
+    width: 35px;
+    font-size: 16pt;
+    font-weight: bold;
+    padding: 0 2px;
+    border: 1px solid grey;
+    border-radius: 0px;
+    box-shadow: 0 1px 1px black;
+}
+
+#palette{
+    display: flex;
+    flex-direction: row;
+}
+
+#palette .color {
+    width: 30px;
+
+}
+
+#btnBlack{background-color: #000000;}
+#btnBlue{background-color: #0000FF;}
+#btnCyan{background-color: #00FFFF}
+#btnRed{background-color: #FF0000}
+#btnYellow{background-color: #FFFF00}
+#btnGreen{background-color: Green}
+#btnMagenta{background-color: Magenta}
+
+#thumbs{
+    grid-column: 1;
+    grid-row: 2;
+    border: 3px solid grey;
+}
