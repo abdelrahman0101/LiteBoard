@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,14 +9,21 @@
     <div id="toolbox">
         <button id="btnNew" class="tool">&#128196;</button>
         <button id="btnImport" class="tool">&#128194;</button>
+        <input type="file" id="file_importer" />
+        <button id="btnSave" class="tool">&#128190;</button>
         <button id="btnPrev" class="tool">&#129144;</button>
         <button id="btnNext" class="tool">&#129146;</button>
         <button id="btnPen" class="tool">&#128393;</button>
+        <button id="btnCalligraphy" class="tool">خ</button>
         <button id="btnHighlight" class="tool">&#128397;</button>
         <button id="btnEraser" class="tool">&#129533;</button>
-        <label for="sldWidth">Line width:</label>
-        <input type="range" min="1" max="30" id="sldWidth" value="2" step="2">
+        <button id="btnClear" class="tool">&#128473;</button>
+        <div class="tool_sep"></div>
+        <label for="sldWidth">Size:</label>
+        <input type="range" min="1" max="100" id="sldWidth" value="2" step="2">
+        <div class="tool_sep"></div>
         <div id="palette">
+            <button id="btnWhite" class="tool color"></button>
             <button id="btnRed" class="tool color"></button>
             <button id="btnGreen" class="tool color"></button>
             <button id="btnBlue" class="tool color"></button>
@@ -25,13 +32,32 @@
             <button id="btnYellow" class="tool color"></button>
             <button id="btnBlack" class="tool color"></button>
         </div>
+        <div class="tool_sep"></div>
+        <select id="bgcolor">
+            <option value="red">Background</option>
+            <option value="green">Background</option>
+            <option value="blue">Background</option>
+            <option value="white">Background</option>
+            <option value="yellow">Background</option>
+            <option value="brown">Background</option>
+            <option value="lightgreen">Background</option>
+            <option value="lightblue">Background</option>
+            <option value="darkblue">Background</option>
+            <option value="darkgreen">Background</option>
+            <option value="darkred">Background</option>
+            <option value="pink">Background</option>
+            <option value="black">Background</option>
+            <option value="grey">Background</option>
+        </select>
+        <div class="tool_sep"></div>
         <div id="status"></div>
     </div>
 
-    <div id="thumbs">Pages</div>
+    <div id="thumbs">
+    </div>
 
-    <canvas id="board" width="800px" height="600px">
-
+    <canvas id="board" width="1360px" height="768px">
+        
     </canvas>
 
 
