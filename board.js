@@ -1,6 +1,6 @@
 var cnvs = document.querySelector("#board");
 var ctx = cnvs.getContext("2d");
-var lineWidth = 4;
+var lineWidth = 2;
 //ctx.translate(0.5, 0.5);
 
 var drawing = false;
@@ -15,17 +15,17 @@ var tool_options = {
 
     },
     "pen": {
-        lineWidth: 4,
+        lineWidth: 2,
         strokeStyle: '#000000',
         alpha: 1
     },
     "calligraphy": {
-        lineWidth: 10,
+        lineWidth: 3,
         strokeStyle: '#000000',
         alpha: 1
     },
     "highlighter" : {
-        lineWidth: 10,
+        lineWidth: 5,
         strokeStyle: "#FFFF00",
         alpha: 0.01
     },
@@ -40,7 +40,7 @@ var tool_options = {
 var pages = [];
 var pageIndex = -1;
 
-last_point = {x:0, y:0};
+let current_path = [];
 
 cnvs.addEventListener("pointerdown", function (event) {
     drawing = true;
@@ -48,8 +48,9 @@ cnvs.addEventListener("pointerdown", function (event) {
     var y = event.clientY - cnvs.getBoundingClientRect().top;
     ctx.beginPath();
     ctx.moveTo(x, y);
-    last_point.x = x;
-    last_point.y = y;
+    current_path = [];
+    current_path.push({x: x, y: y, lineWidth: lineWidth});
+    ctx.lineWidth = lineWidth; // set line width according to the settings of the selected tool
 });
 
 
@@ -58,37 +59,51 @@ cnvs.addEventListener('pointermove', function (event) {
     var y = event.clientY - cnvs.getBoundingClientRect().top;
     showStatus("X: " + Math.round(x) + ", Y: " + Math.round(y));
     if (drawing) {
-        ctx.lineWidth = event.pressure * lineWidth;
+        //console.log("Pen pressure: " + event.pressure);
+        //const pressure = (event.pressure + 0.5);
         if (selected_tool === "pen") {
             ctx.lineTo(x, y);
             ctx.stroke();
+            current_path.push({x: x, y: y, lineWidth: lineWidth});
         }
         else if (selected_tool === "calligraphy")
         {
-            var dist = dist = Math.sqrt(Math.pow(event.movementX, 2) + Math.pow(event.movementY, 2));
-            // modify lineWidth by pressure and acceleration with smoothing
-            ctx.lineWidth = 0.8 * event.pressure * lineWidth / (dist) + (0.2 * ctx.lineWidth); 
+            let dist1 = Math.sqrt(Math.pow(event.movementX, 2) + Math.pow(event.movementY, 2));
+
+            // modify lineWidth acceleration for smoothing
+            let newWidth = (0.5 * lineWidth / (dist1)) + 0.5 * ctx.lineWidth;
+
+            ctx.lineWidth = newWidth;
             ctx.lineTo(x, y);
             ctx.rotate(Math.PI / 9);
             ctx.scale(0.1, 1);
             ctx.stroke();
             ctx.resetTransform();
+            current_path.push({x: x, y: y, lineWidth: newWidth});
         }
-        else if (selected_tool == "eraser") {
+        else if (selected_tool === "eraser") {
             ctx.lineTo(x, y);
             ctx.stroke();
         }
         else if (selected_tool === "highlighter"){
+            let last_point = current_path[current_path.length-1];
             var dist = Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2);
             if (dist > ctx.lineWidth * 5) {
-                last_point.x = x;
-                last_point.y = y;
+                current_path.push({x: x, y: y});
                 ctx.lineTo(x, y);
                 ctx.stroke();
             }
         }
     }
 });
+
+function strokeCalligraphyPoint(x, y){
+    ctx.lineTo(x, y);
+    ctx.rotate(Math.PI / 9);
+    ctx.scale(0.1, 1);
+    ctx.stroke();
+    ctx.resetTransform();
+}
 
 cnvs.addEventListener("pointerup", function () {
     drawing = false;
@@ -273,8 +288,8 @@ function load_options(tool) {
 
 
 // get canvas size that fits the window
-var css_w = window.getComputedStyle(cnvs).width;
-var css_h = window.getComputedStyle(cnvs).height;
+const css_w = window.getComputedStyle(cnvs).width;
+const css_h = window.getComputedStyle(cnvs).height;
 // fit drawing context size to canvas size
 cnvs.width = css_w.substring(0, css_w.length - 2);
 cnvs.height = css_h.substring(0, css_h.length - 2);
