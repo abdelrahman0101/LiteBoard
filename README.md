@@ -20,8 +20,8 @@ A simple light-weight browser-based whiteboard application.
 
 ## Planned Features:
 1. Custom cursors for different tools.
-2. ~~Interactive styles for the tool buttons to indicate the active tool.~~ **Done
-3. ~~Use custom icons for tool buttons instead of (emoji) unicode characters.~~ **Done
+2. ~~Interactive styles for the tool buttons to indicate the active tool.~~ **Done**
+3. ~~Use custom icons for tool buttons instead of (emoji) unicode characters.~~ **Done**
 4. Use a responsive design to support mobile devices.
 5. A new icon for the app and website.
 6. Select and move any part of the image.
