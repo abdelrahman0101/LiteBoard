@@ -1,4 +1,4 @@
-# MyLiteBoard
+# Opelea
 A simple light-weight browser-based whiteboard application. 
 
 ## Current Features:
