@@ -292,17 +292,20 @@ function loadPDF(pdfData)
                 pdf.getPage(i).then(function(page) {
                     console.log('Page loaded', i);
                     let scale_to_fit = 1;
-                    const pageWidth = page.view[2];
-                    const pageHeight = page.view[3];
+                    let viewport = page.getViewport({scale: 1});
+                    const pageWidth = viewport.width;
+                    const pageHeight = viewport.height;
                     if (pageHeight > pageWidth)
                     {
                         scale_to_fit = cnvs.parentElement.clientWidth / pageWidth;
+                        console.log("Height is larger. Scale ratio is", scale_to_fit);
                     }
                     else
                     {
                         scale_to_fit = cnvs.parentElement.clientHeight / pageHeight;
+                        console.log("Width is larger. Scale ratio is", scale_to_fit);
                     }
-                    const viewport = page.getViewport({scale: scale_to_fit * canvas_resolution_scale});
+                    viewport = page.getViewport({scale: scale_to_fit * canvas_resolution_scale});
 
                     // Prepare canvas using PDF page dimensions
                     temp_cnvs.height = viewport.height;
