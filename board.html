@@ -2,36 +2,46 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LiteBoard</title>
+    <title>Opelea Whiteboard</title>
     <link rel="stylesheet" href="styles.css"/>
     <link href="fontawesome-free-5.15.4-web/css/all.css" rel="stylesheet">
 </head>
 <body>
     <div id="toolbox">
-        <button id="btnNew" class="tool fa fa-file"></button>
-        <button id="btnImport" class="tool fa fa-folder-open"></button>
-        <input type="file" id="file_importer" />
-        <button id="btnSave" class="tool fa fa-save"></button>
-        <button id="btnPrev" class="tool fa fa-step-backward"></button>
-        <button id="btnNext" class="tool fa fa-step-forward"></button>
-        <button id="btnPen" class="tool fa fa-pencil-alt"></button>
-        <button id="btnCalligraphy" class="tool">خ</button>
-        <button id="btnHighlight" class="tool fa fa-marker"></button>
-        <button id="btnEraser" class="tool fa fa-eraser"></button>
-        <button id="btnClear" class="tool fa fa-trash-alt"></button>
+        <button id="btnNew" class="btn fa fa-file"></button>
+        <button id="btnImport" class="btn fa fa-folder-open"></button>
+        <input type="file" id="file_importer" accept="image/*,application/pdf" multiple/>
+        <button id="btnSave" class="btn fa fa-save"></button>
+        <button id="btnPrev" class="btn fa fa-step-backward"></button>
+        <button id="btnNext" class="btn fa fa-step-forward"></button>
+        <button id="btnPen" class="tool btn enabled fa fa-pencil-alt"></button>
+        <div class="dropdown_container">
+            <button id="btnCalligraphy" class="tool btn">خ</button>
+            <div class="dropdown_list" id="calligraphy_angles">
+                <button value="0">0&deg;</button>
+                <button value="30">30&deg;</button>
+                <button value="45">45&deg;</button>
+                <button value="60">60&deg;</button>
+                <button value="70" class="enabled">70&deg;</button>
+                <button value="90">90&deg;</button>
+            </div>
+        </div>
+        <button id="btnHighlight" class="tool btn fa fa-marker"></button>
+        <button id="btnEraser" class="tool btn fa fa-eraser"></button>
+        <button id="btnClear" class="btn fa fa-trash-alt"></button>
         <div class="tool_sep"></div>
         <label for="sldWidth">Size:</label>
         <input type="range" min="1" max="50" id="sldWidth" value="2" step="2">
         <div class="tool_sep"></div>
         <div id="palette">
-            <button id="btnWhite" class="tool color"></button>
-            <button id="btnRed" class="tool color"></button>
-            <button id="btnGreen" class="tool color"></button>
-            <button id="btnBlue" class="tool color"></button>
-            <button id="btnCyan" class="tool color"></button>
-            <button id="btnMagenta" class="tool color"></button>
-            <button id="btnYellow" class="tool color"></button>
-            <button id="btnBlack" class="tool color"></button>
+            <button id="btnWhite" class="btn color"></button>
+            <button id="btnRed" class="btn color"></button>
+            <button id="btnGreen" class="btn color"></button>
+            <button id="btnBlue" class="btn color"></button>
+            <button id="btnCyan" class="btn color"></button>
+            <button id="btnMagenta" class="btn color"></button>
+            <button id="btnYellow" class="btn color"></button>
+            <button id="btnBlack" class="btn color"></button>
         </div>
         <div class="tool_sep"></div>
         <select id="bgcolor">
@@ -51,17 +61,22 @@
             <option value="grey">Background</option>
         </select>
         <div class="tool_sep"></div>
-        <div id="status"></div>
+        <!--<div id="status"></div>-->
+        <progress id="fileProgress" value="0" max="100">Loading...</progress>
+
     </div>
 
     <div id="thumbs">
     </div>
+    <div id="board_container">
+        <canvas id="board" width="1000px" height="1000px">
 
-    <canvas id="board" width="1360px" height="768px">
-        
-    </canvas>
+        </canvas>
+    </div>
+    <div id="float_screen">
 
-
+    </div>
+    <script src="./pdfjs-2.10.377-dist/build/pdf.js"></script>
     <script src="board.js"></script>
 </body>
 </html>

@@ -1,13 +1,26 @@
 #board {
     background-color: white;
     border: 1px solid grey;
-    box-shadow: 3px 3px 3px black;
+    box-shadow: 2px 2px 3px black;
+    display: block;
+    width: 100%;
+    height: 100%;
+ }
+
+#board_container{
+    border: 1px inset;
+    background-color: lightgray;
     grid-row: 2;
     grid-column: 2;
-    display: block;
     height: 100%;
     width: 100%;
- }
+    overflow: auto;
+}
+
+#fileProgress{
+    visibility: hidden;
+    width: 100px;
+}
 
 html, body{
     height: calc(100% - 20px) ;
@@ -34,7 +47,7 @@ body {
     line-height: 16pt;
 }
 
-.tool{
+.btn{
     height: 100%;
     width: 35px;
     font-size: 16pt;
@@ -43,6 +56,31 @@ body {
     border: 1px solid grey;
     border-radius: 0px;
     box-shadow: 0 1px 0px black;
+}
+
+.enabled {
+    border-style: inset;
+    background-color: #FFFFFF;
+}
+
+.dropdown_container{
+    height: 100%;
+}
+
+.dropdown_list{
+    visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    position: relative;
+    margin-top: 5px;
+    box-shadow: 2px 2px 3px black;
+}
+
+.dropdown_list button{
+    border-radius: 0;
+    border-style: none;
+    padding: 5px 0px;
 }
 
 #palette{
@@ -111,4 +149,15 @@ body {
 
 #thumbs img.active{
     border-left: 3px solid blue;
+}
+
+#float_screen{
+    visibility: hidden;
+    z-index: 100;
+    height: 100%;
+    width: 100%;
+    grid-column-start: 1;
+    grid-column-end: 3;
+    grid-row-start: 1;
+    grid-row-end: 3;
 }
