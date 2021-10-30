@@ -2,7 +2,7 @@ var cnvs = document.querySelector("#board");
 var ctx = cnvs.getContext("2d");
 var lineWidth = 2;
 //ctx.translate(0.5, 0.5);
-const canvas_resolution_scale = 1.0;
+const canvas_resolution_scale = 2.0;
 var drawing = false;
 var x = 0;
 var y = 0;
@@ -57,7 +57,7 @@ cnvs.addEventListener("pointerdown", function (event) {
 cnvs.addEventListener('pointermove', function (event) {
     var x = (event.clientX - cnvs.getBoundingClientRect().left) * canvas_resolution_scale;
     var y = (event.clientY - cnvs.getBoundingClientRect().top) * canvas_resolution_scale;
-    //showStatus("X: " + Math.round(x) + ", Y: " + Math.round(y));
+    showStatus("X: " + Math.round(x) + ", Y: " + Math.round(y));
     if (drawing) {
         //console.log("Pen pressure: " + event.pressure);
         //const pressure = (event.pressure + 0.5);
@@ -112,6 +112,7 @@ cnvs.addEventListener("pointerup", function () {
 });
 
 cnvs.addEventListener("pointerout", function () {
+    showStatus("");
     drawing = false;
 });
 
@@ -249,6 +250,7 @@ document.querySelector("#file_importer").addEventListener("change", function (ev
                 const typedarray = new Uint8Array(this.result);
                 loadPDF(typedarray);
             };
+            showStatus("loading file: " + file_urls[i].name);
             fileReader.readAsArrayBuffer(file_urls[i]);
         }
         else
@@ -271,9 +273,7 @@ function loadPDF(pdfData)
     pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs-2.10.377-dist/build/pdf.worker.js';
     const loadingTask = pdfjsLib.getDocument(pdfData);
     loadingTask.promise.then(function(pdf) {
-        console.log('PDF loaded');
         const page_count = pdf.numPages;
-        console.log("Number of pages:", page_count);
         /*
             Pages are rendered asynchronously.
             We need to insert PDF pages in order, but some pages take more time to render than others
@@ -290,7 +290,6 @@ function loadPDF(pdfData)
             (function (pdf_idx){
                 //create a new scope to preserve PDF page index
                 pdf.getPage(i).then(function(page) {
-                    console.log('Page loaded', i);
                     let scale_to_fit = 1;
                     let viewport = page.getViewport({scale: 1});
                     const pageWidth = viewport.width;
@@ -318,8 +317,10 @@ function loadPDF(pdfData)
                         temp_cnvs_array[i - 1] = temp_cnvs;
                         progress++;
                         progress_bar.value = progress * 100 / temp_cnvs_array.length;
+                        showStatus(progress + " of " + temp_cnvs_array.length)
                         if (progress === temp_cnvs_array.length)
                         {
+                            showStatus("");
                             progress_bar.style.visibility = "hidden";
                             //all pages have been loaded
                             for (let c=0; c < temp_cnvs_array.length; c++)
@@ -421,7 +422,6 @@ function saveCurrentPage() {
 
 function clearBoard() {
     ctx.clearRect(0, 0, cnvs.clientWidth * canvas_resolution_scale, cnvs.clientHeight * canvas_resolution_scale);
-
 }
 
 function navigateTo(target_page) {
@@ -443,6 +443,30 @@ function navigateTo(target_page) {
     ctx.drawImage(pages[target_page], 0, 0);
     load_options(selected_tool);
     pageIndex = target_page;
+    scrollThumbnailsToActivePage();
+}
+
+document.addEventListener("keydown", function (e){
+    if (e.code === "ArrowLeft" || e.code === "ArrowUp")
+    {
+        document.querySelector("#btnPrev").click();
+    }
+    else if(e.code === "ArrowRight" || e.code === "ArrowDown")
+    {
+        document.querySelector("#btnNext").click();
+    }
+});
+
+document.querySelector("#toolbox").addEventListener("keydown", (e)=>{
+    //prevent bubbling keydown event
+    e.stopPropagation();
+
+});
+
+function scrollThumbnailsToActivePage()
+{
+    let activeThumb = document.querySelector("#thumbs img.active");
+    activeThumb.scrollIntoView({behavior: "smooth", block: "nearest"});
 }
 
 function setActivePage(index) {
@@ -472,7 +496,6 @@ const css_h = window.getComputedStyle(cnvs).height;
 // fit drawing context size to canvas size
 cnvs.width = css_w.substring(0, css_w.length - 2) * canvas_resolution_scale;
 cnvs.height = css_h.substring(0, css_h.length - 2) * canvas_resolution_scale;
-console.log(cnvs.width, cnvs.height);
 // fix canvas size
 cnvs.style.width = css_w;
 cnvs.style.height = css_h;
