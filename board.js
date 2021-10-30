@@ -52,6 +52,7 @@ cnvs.addEventListener("pointerdown", function (event) {
     current_path = [];
     current_path.push({x: x, y: y, lineWidth: lineWidth});
     ctx.lineWidth = lineWidth; // set line width according to the settings of the selected tool
+    event.preventDefault(); //disable browser gestures
 });
 
 cnvs.addEventListener('pointermove', function (event) {
@@ -95,6 +96,7 @@ cnvs.addEventListener('pointermove', function (event) {
             }
         }
     }
+    event.preventDefault(); //disable browser gestures
 });
 
 function strokeCalligraphyPoint(x, y){
@@ -106,9 +108,10 @@ function strokeCalligraphyPoint(x, y){
 }
 
 
-cnvs.addEventListener("pointerup", function () {
+cnvs.addEventListener("pointerup", function (e) {
     drawing = false;
     saveCurrentPage();
+    e.preventDefault(); //disable browser gestures
 });
 
 cnvs.addEventListener("pointerout", function () {
