@@ -298,12 +298,10 @@ function loadPDF(pdfData)
                     if (pageHeight > pageWidth)
                     {
                         scale_to_fit = cnvs.parentElement.clientWidth / pageWidth;
-                        console.log("Height is larger. Scale ratio is", scale_to_fit);
                     }
                     else
                     {
                         scale_to_fit = cnvs.parentElement.clientHeight / pageHeight;
-                        console.log("Width is larger. Scale ratio is", scale_to_fit);
                     }
                     viewport = page.getViewport({scale: scale_to_fit * canvas_resolution_scale});
 
