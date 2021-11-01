@@ -69,11 +69,13 @@ cnvs.addEventListener('pointermove', function (event) {
         }
         else if (selected_tool === "calligraphy")
         {
-            let dist1 = Math.sqrt(Math.pow(event.movementX, 2) + Math.pow(event.movementY, 2));
-
+            let last_point = current_path[current_path.length-1];
+            let dist1 = Math.sqrt(Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2));
+            //let dist2 = Math.sqrt(Math.pow(event.movementX, 2) + Math.pow(event.movementY, 2));
             // modify lineWidth acceleration for smoothing
-            let newWidth = (0.5 * lineWidth / (dist1)) + 0.5 * ctx.lineWidth;
-
+            let newWidth = 0.5 * lineWidth * canvas_resolution_scale / (dist1) + 0.5 * ctx.lineWidth
+            console.log(last_point);
+            // ctx.lineWidth is capped so it will not accept infinity
             ctx.lineWidth = newWidth;
             ctx.lineTo(x, y);
             ctx.rotate(tool_options.calligraphy.angle);
@@ -88,7 +90,7 @@ cnvs.addEventListener('pointermove', function (event) {
         }
         else if (selected_tool === "highlighter"){
             let last_point = current_path[current_path.length-1];
-            var dist = Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2);
+            let dist = Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2);
             if (dist > ctx.lineWidth * 5) {
                 current_path.push({x: x, y: y});
                 ctx.lineTo(x, y);

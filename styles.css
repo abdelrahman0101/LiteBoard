@@ -107,9 +107,10 @@ body {
 #thumbs {
     grid-column: 1;
     grid-row: 2;
-    border: 3px solid grey;
+    border: 2px solid grey;
     overflow-x: hidden;
     overflow-y: auto;
+    background-image: linear-gradient(to right, #EEE, white);
 }
 
 #bgcolor {
@@ -146,6 +147,7 @@ body {
     width: 100%;
     border: 1px solid grey;
     box-shadow: 0px 2px 2px grey;
+    background-color: white;
 }
 
 #thumbs img.active{
