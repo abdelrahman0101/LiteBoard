@@ -2,11 +2,9 @@ var cnvs = document.querySelector("#board");
 var ctx = cnvs.getContext("2d");
 var lineWidth = 2;
 //ctx.translate(0.5, 0.5);
-const resolution_scale = 2.0;
+const resolution_scale = 2.0; // 1.0;
 const device_scale = window.devicePixelRatio;
-const canvas_scale = resolution_scale / device_scale;
-
-console.log(device_scale);
+const canvas_scale = 1; //resolution_scale / device_scale;
 
 var drawing = false;
 var x = 0;
@@ -59,7 +57,7 @@ cnvs.addEventListener("pointerdown", function (event) {
     var x = event.clientX - cnvs.getBoundingClientRect().left;
     var y = event.clientY - cnvs.getBoundingClientRect().top;
     ctx.beginPath();
-    ctx.moveTo(x * canvas_scale, y * canvas_scale);
+    ctx.moveTo(x, y);
     current_path = [];
     current_path.push({x: x, y: y, lineWidth: lineWidth});
     ctx.lineWidth = lineWidth; // set line width according to the settings of the selected tool
@@ -67,9 +65,9 @@ cnvs.addEventListener("pointerdown", function (event) {
 });
 
 cnvs.addEventListener('pointermove', function (event) {
-    var x = (event.clientX - cnvs.getBoundingClientRect().left) * canvas_scale;
-    var y = (event.clientY - cnvs.getBoundingClientRect().top) * canvas_scale;
-    showStatus("X: " + Math.round(x) + ", Y: " + Math.round(y));
+    var x = (event.clientX - cnvs.getBoundingClientRect().left);
+    var y = (event.clientY - cnvs.getBoundingClientRect().top);
+    //showStatus("X: " + Math.round(x) + ", Y: " + Math.round(y));
     if (drawing) {
         //console.log("Pen pressure: " + event.pressure);
         //const pressure = (event.pressure + 0.5);
@@ -82,17 +80,16 @@ cnvs.addEventListener('pointermove', function (event) {
         {
             let last_point = current_path[current_path.length-1];
             let dist1 = Math.sqrt(Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2));
-            //let dist2 = Math.sqrt(Math.pow(event.movementX, 2) + Math.pow(event.movementY, 2));
             // modify lineWidth acceleration for smoothing
-            let newWidth = 0.5 * lineWidth * canvas_scale / (dist1) + 0.5 * ctx.lineWidth
-            console.log(last_point);
+            let newWidth = 0.5 * lineWidth / (dist1) + 0.5 * ctx.lineWidth
             // ctx.lineWidth is capped so it will not accept infinity
             ctx.lineWidth = newWidth;
             ctx.lineTo(x, y);
+            let trans_mat = ctx.getTransform();
             ctx.rotate(tool_options.calligraphy.angle);
             ctx.scale(0.1, 1);
             ctx.stroke();
-            ctx.resetTransform();
+            ctx.setTransform(trans_mat); //restore transformations
             current_path.push({x: x, y: y, lineWidth: newWidth});
         }
         else if (selected_tool === "eraser") {
@@ -111,14 +108,6 @@ cnvs.addEventListener('pointermove', function (event) {
     }
     event.preventDefault(); //disable browser gestures
 });
-
-function strokeCalligraphyPoint(x, y){
-    ctx.lineTo(x, y);
-    ctx.rotate(tool_options.calligraphy.angle);
-    ctx.scale(0.1, 1);
-    ctx.stroke();
-    ctx.resetTransform();
-}
 
 
 cnvs.addEventListener("pointerup", function (e) {
@@ -169,6 +158,7 @@ document.querySelectorAll("#bgcolor option").forEach(c => {
 document.querySelector("#bgcolor").addEventListener("change", function (event) {
     cnvs.style.backgroundColor = this.value;
     this.style.backgroundColor = this.value;
+    pages[pageIndex].style.backgroundColor = this.value;
 });
 
 document.querySelector("#sldWidth").addEventListener("change", function (event) {
@@ -177,16 +167,40 @@ document.querySelector("#sldWidth").addEventListener("change", function (event) 
 });
 
 document.querySelector('#btnNew').addEventListener("click", function () {
-    newPage();
+    createNewPage();
 });
 
 document.querySelector("#btnSave").addEventListener("click", function () {
     saveCurrentPage();
+    let merged = document.createElement("canvas");
+    let mrg_ctx = merged.getContext("2d");
+    merged.width = cnvs.width;
+    merged.height = cnvs.height;
+    mrg_ctx.fillStyle = cnvs.style.backgroundColor;
+    console.log(mrg_ctx.fillStyle);
+    mrg_ctx.fillRect(0, 0, merged.width, merged.height);
+    if (cnvs.style.backgroundImage) {
+        let background = new Image();
+        background.onload = ()=>{
+            mrg_ctx.drawImage(background, 0, 0);
+            mrg_ctx.drawImage(cnvs, 0, 0);
+            downloadCanvasImage(merged);
+        }
+        background.src = cnvs.style.backgroundImage.slice(4, -1).replace(/"/g, "");;
+    }
+    else {
+        mrg_ctx.drawImage(cnvs, 0, 0);
+        downloadCanvasImage(merged);
+    }
+});
+
+function downloadCanvasImage(canvas)
+{
     let downloadLink = document.createElement("a");
     downloadLink.setAttribute("download", "Page" + (pageIndex + 1) + ".png");
-    downloadLink.href = cnvs.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+    downloadLink.href = canvas.toDataURL("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
     downloadLink.click();
-});
+}
 
 document.querySelector("#btnNext").addEventListener("click", function () {
     if (pageIndex < pages.length - 1)
@@ -273,7 +287,7 @@ document.querySelector("#file_importer").addEventListener("change", function (ev
         {
             let img = new Image;
             img.onload = function () {
-                insertPageFromImage(img, pageIndex + 1);
+                insertPage(pageIndex + 1, img, img);
                 img.onload = null;
             };
             img.src = URL.createObjectURL(file_urls[i]);
@@ -318,7 +332,7 @@ function loadPDF(pdfData)
                     {
                         scale_to_fit = cnvs.parentElement.clientHeight / pageHeight;
                     }
-                    viewport = page.getViewport({scale: scale_to_fit * canvas_scale});
+                    viewport = page.getViewport({scale: scale_to_fit});
 
                     // Prepare canvas using PDF page dimensions
                     temp_cnvs.height = viewport.height;
@@ -344,7 +358,7 @@ function loadPDF(pdfData)
                                 const img = new Image();
                                 img.src = temp_cnvs_array[c].toDataURL();
                                 //create a new Opelea page from rendered pdf page
-                                insertPageFromImage(img, pageIndex + c + 1);
+                                insertPage(pageIndex + c + 1, img, img);
                             }
                         }
                         else {
@@ -392,11 +406,17 @@ document.querySelectorAll(".tool").forEach((t)=>{
     });
 });
 
-function insertPageFromImage(img, pg_index){
-    img.className = "thumb_img";
-    pages.splice(pg_index, 0, img);
+function insertPage(pg_index, fg_img, bg_img, bg_color) {
+    fg_img.className = "thumb_img";
+    let newPage = document.createElement("div");
+    newPage.style.backgroundColor = bg_color || "white";
+    if (bg_img) {
+        newPage.style.backgroundImage = `url(${bg_img.src})`;
+    }
+    newPage.appendChild(fg_img);
+    pages.splice(pg_index, 0, newPage);
     if (pg_index > 0) {
-        pages[pg_index - 1].after(img)
+        pages[pg_index - 1].after(newPage)
         // fix indices in event handlers
         for (var i = pg_index; i < pages.length; i++) {
             (function (idx) {
@@ -408,37 +428,39 @@ function insertPageFromImage(img, pg_index){
     }
     else {
         // First inserted page
-        document.querySelector("#thumbs").appendChild(img);
+        document.querySelector("#thumbs").appendChild(newPage);
         // add event handler
         (function (idx) {
-            img.onclick = function () {
+            newPage.onclick = function () {
                 navigateTo(idx)
             }
         })(pg_index);
     }
 }
 
-function newPage() {
+function createNewPage() {
     if (pages.length > 0) {
         saveCurrentPage();
         clearBoard();
-        cnvs
+        cnvs.style.backgroundImage = null;
     }
+    fillWorkspace();
+    configureCanvas();
     pageIndex++;
     const img = new Image();
     img.src = cnvs.toDataURL();
-    insertPageFromImage(img, pageIndex);
+    insertPage(pageIndex, img);
     setActivePage(pageIndex);
 }
 
 function saveCurrentPage() {
-    var img = pages[pageIndex];
+    var img = pages[pageIndex].firstChild;
     URL.revokeObjectURL(img.src);
     img.src = cnvs.toDataURL();
 }
 
 function clearBoard() {
-    ctx.clearRect(0, 0, cnvs.clientWidth * canvas_scale, cnvs.clientHeight * canvas_scale);
+    ctx.clearRect(0, 0, cnvs.clientWidth, cnvs.clientHeight);
 }
 
 function navigateTo(target_page) {
@@ -450,14 +472,16 @@ function navigateTo(target_page) {
     setActivePage(target_page);
     ctx.globalCompositeOperation = "source-over"; //needed when the eraser is active
     //load selected page onto the canvas
-    cnvs.width = pages[target_page].naturalWidth;
-    cnvs.height = pages[target_page].naturalHeight;
+    cnvs.width = pages[target_page].firstChild.naturalWidth;
+    cnvs.height = pages[target_page].firstChild.naturalHeight;
     cnvs.style.width = cnvs.width / canvas_scale + "px";
     cnvs.style.height = cnvs.height / canvas_scale + "px";
-    // reset the lineCap and lineJoin properties to "round" after resizing the canvas
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.drawImage(pages[target_page], 0, 0);
+    cnvs.style.backgroundColor = pages[target_page].style.backgroundColor;
+    cnvs.style.backgroundImage = pages[target_page].style.backgroundImage;
+    document.querySelector(`#bgcolor option[value='${pages[target_page].style.backgroundColor}']`).selected = true;
+    document.querySelector('#bgcolor').style.backgroundColor = pages[target_page].style.backgroundColor;
+    ctx.drawImage(pages[target_page].firstChild, 0, 0);
+    configureCanvas();
     load_options(selected_tool);
     pageIndex = target_page;
     scrollThumbnailsToActivePage();
@@ -482,12 +506,12 @@ document.querySelector("#toolbox").addEventListener("keydown", (e)=>{
 
 function scrollThumbnailsToActivePage()
 {
-    let activeThumb = document.querySelector("#thumbs img.active");
+    let activeThumb = document.querySelector("#thumbs div.active");
     activeThumb.scrollIntoView({behavior: "smooth", block: "nearest"});
 }
 
 function setActivePage(index) {
-    var active_page = document.querySelector("#thumbs img.active")
+    var active_page = document.querySelector("#thumbs div.active")
     if (active_page)
         active_page.classList.remove("active");
     pages[index].classList.add("active");
@@ -506,24 +530,46 @@ function load_options(tool) {
     ctx.globalAlpha = tool_options[tool].alpha;
 }
 
+function fillWorkspace()
+{
+    cnvs.style.width = "100%";
+    cnvs.style.height = "100%";
+    // get canvas size that fits the window
+    const css_w = window.getComputedStyle(cnvs).width;
+    const css_h = window.getComputedStyle(cnvs).height;
+    // fit drawing context size to css size
+    cnvs.width = parseInt(css_w) * canvas_scale;
+    cnvs.height = parseInt(css_h) * canvas_scale;
+    // fix canvas size
+    cnvs.style.width = cnvs.width / canvas_scale + "px";
+    cnvs.style.height = cnvs.height / canvas_scale + "px";
+    console.log(css_w, css_h);
+}
 
-// get canvas size that fits the window
-const css_w = window.getComputedStyle(cnvs).width;
-const css_h = window.getComputedStyle(cnvs).height;
-console.log(css_w, css_h);
-// fit drawing context size to canvas size
-cnvs.width = css_w.substring(0, css_w.length - 2) * canvas_scale;
-cnvs.height = css_h.substring(0, css_h.length - 2) * canvas_scale;
-// fix canvas size
-cnvs.style.width = css_w;
-cnvs.style.height = css_h;
+function configureCanvas()
+{
+    // reset the lineCap and lineJoin properties to "round" after resizing the canvas
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.resetTransform();
+    // Normalize coordinate system to use scaled pixels.
+    ctx.scale(canvas_scale, canvas_scale);
+}
+
+window.addEventListener("resize", function (event){
+    /*
+    console.log("resized");
+    const image = ctx.getImageData(0, 0, cnvs.width, cnvs.height);
+    fillWorkspace();
+    ctx.putImageData(image, 0, 0);
+    configureCanvas();
+     */
+});
 
 load_options("pen");
 document.querySelector("#btnPen").style.borderBottom = "5px solid " + tool_options["pen"].strokeStyle;
 document.querySelector("#btnCalligraphy").style.borderBottom = "5px solid " + tool_options["calligraphy"].strokeStyle;
 document.querySelector("#btnHighlight").style.borderBottom = "5px solid " + tool_options["highlighter"].strokeStyle;
 document.querySelector("#bgcolor").value = "white"
-ctx.lineCap = "round";
-ctx.lineJoin = "round";
 
-newPage();
+createNewPage();
