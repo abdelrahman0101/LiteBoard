@@ -2,7 +2,12 @@ var cnvs = document.querySelector("#board");
 var ctx = cnvs.getContext("2d");
 var lineWidth = 2;
 //ctx.translate(0.5, 0.5);
-const canvas_resolution_scale = 2.0;
+const resolution_scale = 2.0;
+const device_scale = window.devicePixelRatio;
+const canvas_scale = resolution_scale / device_scale;
+
+console.log(device_scale);
+
 var drawing = false;
 var x = 0;
 var y = 0;
@@ -43,12 +48,18 @@ var pageIndex = -1;
 
 let current_path = [];
 
+cnvs.addEventListener("contextmenu", function (e){
+    //disable rightclick menu on the canvas
+    e.preventDefault();
+    return false;
+});
+
 cnvs.addEventListener("pointerdown", function (event) {
     drawing = true;
     var x = event.clientX - cnvs.getBoundingClientRect().left;
     var y = event.clientY - cnvs.getBoundingClientRect().top;
     ctx.beginPath();
-    ctx.moveTo(x * canvas_resolution_scale, y * canvas_resolution_scale);
+    ctx.moveTo(x * canvas_scale, y * canvas_scale);
     current_path = [];
     current_path.push({x: x, y: y, lineWidth: lineWidth});
     ctx.lineWidth = lineWidth; // set line width according to the settings of the selected tool
@@ -56,8 +67,8 @@ cnvs.addEventListener("pointerdown", function (event) {
 });
 
 cnvs.addEventListener('pointermove', function (event) {
-    var x = (event.clientX - cnvs.getBoundingClientRect().left) * canvas_resolution_scale;
-    var y = (event.clientY - cnvs.getBoundingClientRect().top) * canvas_resolution_scale;
+    var x = (event.clientX - cnvs.getBoundingClientRect().left) * canvas_scale;
+    var y = (event.clientY - cnvs.getBoundingClientRect().top) * canvas_scale;
     showStatus("X: " + Math.round(x) + ", Y: " + Math.round(y));
     if (drawing) {
         //console.log("Pen pressure: " + event.pressure);
@@ -73,7 +84,7 @@ cnvs.addEventListener('pointermove', function (event) {
             let dist1 = Math.sqrt(Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2));
             //let dist2 = Math.sqrt(Math.pow(event.movementX, 2) + Math.pow(event.movementY, 2));
             // modify lineWidth acceleration for smoothing
-            let newWidth = 0.5 * lineWidth * canvas_resolution_scale / (dist1) + 0.5 * ctx.lineWidth
+            let newWidth = 0.5 * lineWidth * canvas_scale / (dist1) + 0.5 * ctx.lineWidth
             console.log(last_point);
             // ctx.lineWidth is capped so it will not accept infinity
             ctx.lineWidth = newWidth;
@@ -307,7 +318,7 @@ function loadPDF(pdfData)
                     {
                         scale_to_fit = cnvs.parentElement.clientHeight / pageHeight;
                     }
-                    viewport = page.getViewport({scale: scale_to_fit * canvas_resolution_scale});
+                    viewport = page.getViewport({scale: scale_to_fit * canvas_scale});
 
                     // Prepare canvas using PDF page dimensions
                     temp_cnvs.height = viewport.height;
@@ -411,6 +422,7 @@ function newPage() {
     if (pages.length > 0) {
         saveCurrentPage();
         clearBoard();
+        cnvs
     }
     pageIndex++;
     const img = new Image();
@@ -426,7 +438,7 @@ function saveCurrentPage() {
 }
 
 function clearBoard() {
-    ctx.clearRect(0, 0, cnvs.clientWidth * canvas_resolution_scale, cnvs.clientHeight * canvas_resolution_scale);
+    ctx.clearRect(0, 0, cnvs.clientWidth * canvas_scale, cnvs.clientHeight * canvas_scale);
 }
 
 function navigateTo(target_page) {
@@ -440,8 +452,8 @@ function navigateTo(target_page) {
     //load selected page onto the canvas
     cnvs.width = pages[target_page].naturalWidth;
     cnvs.height = pages[target_page].naturalHeight;
-    cnvs.style.width = cnvs.width / canvas_resolution_scale + "px";
-    cnvs.style.height = cnvs.height / canvas_resolution_scale + "px";
+    cnvs.style.width = cnvs.width / canvas_scale + "px";
+    cnvs.style.height = cnvs.height / canvas_scale + "px";
     // reset the lineCap and lineJoin properties to "round" after resizing the canvas
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -498,9 +510,10 @@ function load_options(tool) {
 // get canvas size that fits the window
 const css_w = window.getComputedStyle(cnvs).width;
 const css_h = window.getComputedStyle(cnvs).height;
+console.log(css_w, css_h);
 // fit drawing context size to canvas size
-cnvs.width = css_w.substring(0, css_w.length - 2) * canvas_resolution_scale;
-cnvs.height = css_h.substring(0, css_h.length - 2) * canvas_resolution_scale;
+cnvs.width = css_w.substring(0, css_w.length - 2) * canvas_scale;
+cnvs.height = css_h.substring(0, css_h.length - 2) * canvas_scale;
 // fix canvas size
 cnvs.style.width = css_w;
 cnvs.style.height = css_h;
