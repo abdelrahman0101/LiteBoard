@@ -138,7 +138,7 @@ document.querySelectorAll(".color").forEach(c => {
             // both tools must have the same pen color for simplicity
             tool_options["pen"].strokeStyle = color;
             tool_options["calligraphy"].strokeStyle = color;
-            document.querySelectorAll("#bgcolor option").forEach(c => { c.style.color = color; });
+            document.querySelectorAll("#background_colors button").forEach(c => { c.style.color = color; });
             document.querySelector("#bgcolor").style.color = color;
             document.querySelector("#btnPen").style.borderBottom = "5px solid " + color;
             document.querySelector("#btnCalligraphy").style.borderBottom = "5px solid " + color;
@@ -150,15 +150,18 @@ document.querySelectorAll(".color").forEach(c => {
     });
 });
 
-document.querySelectorAll("#bgcolor option").forEach(c => {
+document.querySelectorAll("#background_colors button").forEach(c => {
     c.style.backgroundColor = c.value;
-    c.style.color = c.value;
+    c.style.color = tool_options["pen"].strokeStyle;
 });
 
-document.querySelector("#bgcolor").addEventListener("change", function (event) {
-    cnvs.style.backgroundColor = this.value;
-    this.style.backgroundColor = this.value;
-    pages[pageIndex].style.backgroundColor = this.value;
+document.querySelectorAll("#background_colors button").forEach(c => {
+    c.addEventListener("click", function (event) {
+        cnvs.style.backgroundColor = this.value;
+        document.querySelector("#bgcolor").style.backgroundColor = this.value;
+        pages[pageIndex].style.backgroundColor = this.value;
+        hideDropdownLists();
+    });
 });
 
 document.querySelector("#sldWidth").addEventListener("change", function (event) {
@@ -478,7 +481,6 @@ function navigateTo(target_page) {
     cnvs.style.height = cnvs.height / canvas_scale + "px";
     cnvs.style.backgroundColor = pages[target_page].style.backgroundColor;
     cnvs.style.backgroundImage = pages[target_page].style.backgroundImage;
-    document.querySelector(`#bgcolor option[value='${pages[target_page].style.backgroundColor}']`).selected = true;
     document.querySelector('#bgcolor').style.backgroundColor = pages[target_page].style.backgroundColor;
     ctx.drawImage(pages[target_page].firstChild, 0, 0);
     configureCanvas();
@@ -552,6 +554,7 @@ function configureCanvas()
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.resetTransform();
+    //ctx.translate(0.5, 0.5);
     // Normalize coordinate system to use scaled pixels.
     ctx.scale(canvas_scale, canvas_scale);
 }
@@ -570,6 +573,7 @@ load_options("pen");
 document.querySelector("#btnPen").style.borderBottom = "5px solid " + tool_options["pen"].strokeStyle;
 document.querySelector("#btnCalligraphy").style.borderBottom = "5px solid " + tool_options["calligraphy"].strokeStyle;
 document.querySelector("#btnHighlight").style.borderBottom = "5px solid " + tool_options["highlighter"].strokeStyle;
-document.querySelector("#bgcolor").value = "white"
+document.querySelector("#bgcolor").style.backgroundColor = "white"
+document.querySelector("#bgcolor").style.color = tool_options["pen"].strokeStyle;
 
 createNewPage();

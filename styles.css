@@ -117,22 +117,38 @@ body {
 
 #bgcolor {
     height: 100%;
-    width: 110px;
+    width: 120px;
     font-weight: bold;
 }
 
-#bgcolor option{
+#background_colors button{
     height: 30px;
     font-weight: bold;
 }
 
-#bgcolor option::selection {
-    border: 1px solid black;
+#background_colors button.enabled {
+    border: 2px solid white;
     background-color: #00000000;
 }
 
+#background_colors button:hover {
+    opacity: 0.7;
+}
+
 #sldWidth{
+    width: 100%;
+    margin: 0;
+}
+
+#lineWidth{
     width: 100px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    line-height: 10pt;
+    align-items: center;
+    padding-top: 5px;
+    letter-spacing: 2px;
 }
 
 .tool_sep{
