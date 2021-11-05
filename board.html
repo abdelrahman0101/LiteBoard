@@ -6,14 +6,16 @@
     <link rel="stylesheet" href="styles.css"/>
     <link href="fontawesome-free-5.15.4-web/css/all.css" rel="stylesheet">
 </head>
-<body>
+<body class="">
     <div id="toolbox">
-        <button id="btnNew" class="btn fa fa-file"></button>
-        <button id="btnImport" class="btn fa fa-folder-open"></button>
+        <button id="btnNew" class="btn far fa-file"></button>
+        <button id="btnImport" class="btn far fa-folder-open"></button>
         <input type="file" id="file_importer" accept="image/*,application/pdf" multiple/>
-        <button id="btnSave" class="btn fa fa-save"></button>
+        <button id="btnSave" class="btn far fa-save"></button>
         <button id="btnPrev" class="btn fa fa-step-backward"></button>
+
         <button id="btnNext" class="btn fa fa-step-forward"></button>
+        <div class="tool_sep"></div>
         <button id="btnPen" class="tool btn enabled fa fa-pencil-alt"></button>
         <div class="dropdown_container">
             <button id="btnCalligraphy" class="tool btn">خ</button>
@@ -28,7 +30,7 @@
         </div>
         <button id="btnHighlight" class="tool btn fa fa-marker"></button>
         <button id="btnEraser" class="tool btn fa fa-eraser"></button>
-        <button id="btnClear" class="btn fa fa-trash-alt"></button>
+        <button id="btnClear" class="btn far fa-trash-alt"></button>
         <div class="tool_sep"></div>
         <div id="lineWidth">
             <label for="sldWidth">
@@ -49,7 +51,7 @@
             <button id="btnYellow" class="btn color"></button>
             <button id="btnBlack" class="btn color"></button>
         </div>
-        <div class="tool_sep"></div>
+
         <div class="dropdown_container">
             <button id="bgcolor">Background ▼</button>
             <div class="dropdown_list" id="background_colors">
@@ -68,6 +70,17 @@
                 <button value="black">Background</button>
                 <button value="grey">Background</button>
             </div>
+
+        </div>
+        <div class="tool_sep"></div>
+        <div class="dropdown_container">
+            <button class="btn fa fa-search-plus" id="btnZoom">100%</button>
+            <div class="dropdown_list" id="zoom_list">
+                <button value="0.5">50%</button>
+                <button value="1">100%</button>
+                <button value="w">Fit width</button>
+                <button value="p">Fit page</button>
+            </div>
         </div>
         <div class="tool_sep"></div>
         <div id="status_container">
@@ -76,8 +89,12 @@
         </div>
 
     </div>
-
+    <div id="side">
     <div id="thumbs">
+    </div>
+    <div id="pageCounter">
+        Page <input type="number" id="pgNumber" min="1" max="1" value="1" class=""> of <span id="pgTotal"> 1 </span>
+    </div>
     </div>
     <div id="board_container">
         <canvas id="board" width="100px" height="100px">

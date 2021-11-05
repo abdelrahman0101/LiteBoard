@@ -1,6 +1,6 @@
 #board {
-    background-color: white;
-    border: 1px solid grey;
+    background-color: #fff;
+    background-size: contain;
     box-shadow: 2px 2px 3px black;
     display: block;
     width: 100%;
@@ -9,7 +9,8 @@
  }
 
 #board_container{
-    border: 1px inset;
+    border: 2px inset;
+    box-shadow: 1px 1px 2px inset;
     background-color: lightgray;
     grid-row: 2;
     grid-column: 2;
@@ -38,6 +39,21 @@ body {
     user-select: none;
 }
 
+body.dark{
+    background-color: #555;
+    color: aquamarine;
+
+}
+body.dark button{
+    background-color: grey;
+    color: aquamarine;
+}
+
+body.dark button:hover{
+    background-color: darkgrey;
+}
+
+
 #toolbox{
     grid-column-start: 1;
     grid-column-end: 3;
@@ -60,6 +76,10 @@ body {
     box-shadow: 0 1px 0px black;
 }
 
+.btn:hover{
+    background-color: white;
+}
+
 .enabled {
     border-style: inset;
     background-color: #FFFFFF;
@@ -67,22 +87,30 @@ body {
 
 .dropdown_container{
     height: 100%;
+    position: relative;
 }
 
 .dropdown_list{
+    min-width: 100%;
+    align-items: stretch;
     visibility: hidden;
     display: flex;
     flex-direction: column;
     z-index: 1000;
-    position: relative;
-    margin-top: 5px;
+    position: absolute;
+    margin: 5px auto;
     box-shadow: 2px 2px 3px black;
 }
 
 .dropdown_list button{
     border-radius: 0;
     border-style: none;
-    padding: 5px 0px;
+    padding: 7px;
+    white-space: nowrap
+}
+
+.dropdown_list button:hover{
+    background-color: white;
 }
 
 #palette{
@@ -105,17 +133,8 @@ body {
 #btnGreen{background-color: Green}
 #btnMagenta{background-color: Magenta}
 
-#thumbs {
-    grid-column: 1;
-    grid-row: 2;
-    border: 2px solid grey;
-    overflow-x: hidden;
-    overflow-y: auto;
-    background-image: linear-gradient(to right, #EEE, white);
-    scrollbar-width: thin;
-}
-
 #bgcolor {
+    border: 2px solid black;
     height: 100%;
     width: 120px;
     font-weight: bold;
@@ -133,6 +152,12 @@ body {
 
 #background_colors button:hover {
     opacity: 0.7;
+}
+
+#btnZoom{
+    width: 7ex;
+    font-size: inherit;
+    padding: 5px;
 }
 
 #sldWidth{
@@ -159,6 +184,46 @@ body {
 
 #file_importer{
     display: none;
+}
+
+#side{
+    grid-column: 1;
+    grid-row: 2;
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+
+#thumbs {
+    flex: 1 auto;
+    height: 100px;
+    border: 2px inset grey;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-image: linear-gradient(to right, #EEE, white);
+    scrollbar-width: thin;
+}
+
+#pgNumber{
+    height: 100%;
+    width: 5ex;
+    padding: 3px;
+    text-align: center;
+    border: 1px inset lightgray;
+    background-color: white;
+    border-radius: 3px;
+}
+
+#pgTotal{
+    width: 3ex;
+}
+
+
+#pageCounter{
+    margin: 5px;
 }
 
 #thumbs div{

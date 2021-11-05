@@ -5,6 +5,7 @@ var lineWidth = 2;
 const resolution_scale = 2.0; // 1.0;
 const device_scale = window.devicePixelRatio;
 const canvas_scale = 1; //resolution_scale / device_scale;
+let zoomRatio = 1;
 
 var drawing = false;
 var x = 0;
@@ -62,6 +63,7 @@ cnvs.addEventListener("pointerdown", function (event) {
     current_path.push({x: x, y: y, lineWidth: lineWidth});
     ctx.lineWidth = lineWidth; // set line width according to the settings of the selected tool
     event.preventDefault(); //disable browser gestures
+    document.activeElement.blur();
 });
 
 cnvs.addEventListener('pointermove', function (event) {
@@ -179,7 +181,7 @@ document.querySelector("#btnSave").addEventListener("click", function () {
     let mrg_ctx = merged.getContext("2d");
     merged.width = cnvs.width;
     merged.height = cnvs.height;
-    mrg_ctx.fillStyle = cnvs.style.backgroundColor;
+    mrg_ctx.fillStyle = cnvs.style.backgroundColor || "#fff";
     console.log(mrg_ctx.fillStyle);
     mrg_ctx.fillRect(0, 0, merged.width, merged.height);
     if (cnvs.style.backgroundImage) {
@@ -205,15 +207,6 @@ function downloadCanvasImage(canvas)
     downloadLink.click();
 }
 
-document.querySelector("#btnNext").addEventListener("click", function () {
-    if (pageIndex < pages.length - 1)
-        navigateTo(pageIndex + 1);
-})
-
-document.querySelector("#btnPrev").addEventListener("click", function () {
-    if (pageIndex > 0)
-        navigateTo(pageIndex - 1);
-})
 
 document.querySelector("#btnEraser").addEventListener("click", function () {
     load_options("eraser");
@@ -323,20 +316,20 @@ function loadPDF(pdfData)
             (function (pdf_idx){
                 //create a new scope to preserve PDF page index
                 pdf.getPage(i).then(function(page) {
-                    let scale_to_fit = 1;
+                    let scale_to_fill = 1;
                     let viewport = page.getViewport({scale: 1});
                     const pageWidth = viewport.width;
                     const pageHeight = viewport.height;
-                    if (pageHeight > pageWidth)
+                    scale_to_fill = (cnvs.parentElement.clientWidth) / (pageWidth);
+                    if (pageHeight * scale_to_fill > cnvs.parentElement.clientHeight)
                     {
-                        scale_to_fit = cnvs.parentElement.clientWidth / pageWidth;
+                        //vertical scrollbar is expected to appear, so we need to include its width
+                        cnvs.parentElement.style.overflowY = "scroll";
+                        scale_to_fill = (cnvs.parentElement.clientWidth) / (pageWidth);
+                        cnvs.parentElement.style.overflowY = "auto";
                     }
-                    else
-                    {
-                        scale_to_fit = cnvs.parentElement.clientHeight / pageHeight;
-                    }
-                    viewport = page.getViewport({scale: scale_to_fit});
-
+                    if (scale_to_fill > 1)
+                        viewport = page.getViewport({scale: scale_to_fill});
                     // Prepare canvas using PDF page dimensions
                     temp_cnvs.height = viewport.height;
                     temp_cnvs.width = viewport.width;
@@ -439,6 +432,8 @@ function insertPage(pg_index, fg_img, bg_img, bg_color) {
             }
         })(pg_index);
     }
+    document.querySelector("#pgTotal").innerHTML = pages.length;
+    document.querySelector("#pgNumber").max = pages.length;
 }
 
 function createNewPage() {
@@ -466,6 +461,10 @@ function clearBoard() {
     ctx.clearRect(0, 0, cnvs.clientWidth, cnvs.clientHeight);
 }
 
+document.querySelector("#pgNumber").addEventListener("change", e=>{
+    navigateTo(e.target.value - 1);
+});
+
 function navigateTo(target_page) {
     if (target_page === pageIndex) {
         return;
@@ -477,27 +476,47 @@ function navigateTo(target_page) {
     //load selected page onto the canvas
     cnvs.width = pages[target_page].firstChild.naturalWidth;
     cnvs.height = pages[target_page].firstChild.naturalHeight;
-    cnvs.style.width = cnvs.width / canvas_scale + "px";
-    cnvs.style.height = cnvs.height / canvas_scale + "px";
+    //cnvs.style.width = cnvs.width * zoomRatio + "px";
+    //cnvs.style.height = cnvs.height * zoomRatio + "px";
     cnvs.style.backgroundColor = pages[target_page].style.backgroundColor;
     cnvs.style.backgroundImage = pages[target_page].style.backgroundImage;
     document.querySelector('#bgcolor').style.backgroundColor = pages[target_page].style.backgroundColor;
     ctx.drawImage(pages[target_page].firstChild, 0, 0);
-    configureCanvas();
+    doSmartZoom();
     load_options(selected_tool);
     pageIndex = target_page;
-    scrollThumbnailsToActivePage();
 }
+
+function nextPage()
+{
+    if (pageIndex < pages.length - 1)
+        navigateTo(pageIndex + 1);
+}
+
+function prevPage()
+{
+    if (pageIndex > 0)
+        navigateTo(pageIndex - 1);
+}
+
+document.querySelector("#btnNext").addEventListener("click", nextPage);
+
+document.querySelector("#btnPrev").addEventListener("click", prevPage);
 
 document.addEventListener("keydown", function (e){
     if (e.code === "ArrowLeft" || e.code === "ArrowUp")
     {
-        document.querySelector("#btnPrev").click();
+        prevPage();
+        e.preventDefault();
+        return false;
     }
     else if(e.code === "ArrowRight" || e.code === "ArrowDown")
     {
-        document.querySelector("#btnNext").click();
+        nextPage();
+        e.preventDefault();
+        return false;
     }
+
 });
 
 document.querySelector("#toolbox").addEventListener("keydown", (e)=>{
@@ -517,6 +536,8 @@ function setActivePage(index) {
     if (active_page)
         active_page.classList.remove("active");
     pages[index].classList.add("active");
+    scrollThumbnailsToActivePage();
+    document.querySelector("#pgNumber").value = index + 1;
 }
 
 function load_options(tool) {
@@ -534,18 +555,11 @@ function load_options(tool) {
 
 function fillWorkspace()
 {
-    cnvs.style.width = "100%";
-    cnvs.style.height = "100%";
-    // get canvas size that fits the window
-    const css_w = window.getComputedStyle(cnvs).width;
-    const css_h = window.getComputedStyle(cnvs).height;
-    // fit drawing context size to css size
-    cnvs.width = parseInt(css_w) * canvas_scale;
-    cnvs.height = parseInt(css_h) * canvas_scale;
-    // fix canvas size
-    cnvs.style.width = cnvs.width / canvas_scale + "px";
-    cnvs.style.height = cnvs.height / canvas_scale + "px";
-    console.log(css_w, css_h);
+    cnvs.parentElement.style.overflow = "hidden";
+    cnvs.width = cnvs.parentElement.clientWidth;
+    cnvs.height = cnvs.parentElement.clientHeight;
+    cnvs.parentElement.style.overflow = "auto";
+    scaleCanvas(1);
 }
 
 function configureCanvas()
@@ -556,18 +570,85 @@ function configureCanvas()
     ctx.resetTransform();
     //ctx.translate(0.5, 0.5);
     // Normalize coordinate system to use scaled pixels.
-    ctx.scale(canvas_scale, canvas_scale);
+    ctx.scale(1 / zoomRatio, 1 / zoomRatio);
 }
 
-window.addEventListener("resize", function (event){
-    /*
-    console.log("resized");
-    const image = ctx.getImageData(0, 0, cnvs.width, cnvs.height);
-    fillWorkspace();
-    ctx.putImageData(image, 0, 0);
+function scaleCanvas(ratio)
+{
+    zoomRatio = ratio;
+    cnvs.style.width = cnvs.width * ratio + "px";
+    cnvs.style.height = cnvs.height * ratio + "px";
     configureCanvas();
-     */
+    document.querySelector("#btnZoom").innerHTML = Math.round(100 * ratio) + "%";
+}
+
+function scaleToFill()
+{
+    //fit canvas to workspace width
+    let ratio = cnvs.parentElement.clientWidth / (cnvs.width);
+    if (ratio * cnvs.height > cnvs.parentElement.clientHeight) {
+        cnvs.parentElement.style.overflowY = "scroll";
+        ratio = cnvs.parentElement.clientWidth / (cnvs.width);
+        cnvs.parentElement.style.overflowY = "auto";
+    }
+    scaleCanvas(ratio);
+}
+
+function scaleToFit()
+{
+    let scaleHeight = cnvs.parentElement.clientHeight / (cnvs.height);
+    let scaleWidth = cnvs.parentElement.clientWidth / (cnvs.width)
+    if (scaleWidth < scaleHeight)
+    {
+        if (scaleWidth * cnvs.height > cnvs.parentElement.clientHeight) {
+            cnvs.parentElement.style.overflowY = "scroll";
+            scaleWidth = cnvs.parentElement.clientWidth / (cnvs.width);
+            cnvs.parentElement.style.overflowY = "auto";
+        }
+        scaleCanvas(scaleWidth);
+    }
+    else
+    {
+        if (scaleHeight * cnvs.width > cnvs.parentElement.clientWidth) {
+            cnvs.parentElement.style.overflowX = "scroll";
+            scaleHeight = cnvs.parentElement.clientHeight / (cnvs.height);
+            cnvs.parentElement.style.overflowX = "auto";
+        }
+        scaleCanvas(scaleHeight);
+    }
+}
+
+function doSmartZoom()
+{
+    if (cnvs.width > cnvs.height)
+    {
+        scaleToFit();
+    }
+    else {
+        scaleToFill();
+    }
+}
+
+document.querySelectorAll("#zoom_list button").forEach(z=> {
+    z.addEventListener("click", e => {
+        console.log("Canvas:", cnvs.width, cnvs.height);
+        console.log("Workspace:", cnvs.parentElement.clientWidth, cnvs.parentElement.clientHeight);
+        if (e.target.value === 'w')
+        {
+            scaleToFill();
+        }
+        else if (e.target.value === 'p')
+        {
+            scaleToFit();
+        }
+        else
+        {
+            scaleCanvas(e.target.value);
+        }
+        hideDropdownLists();
+    });
 });
+
 
 load_options("pen");
 document.querySelector("#btnPen").style.borderBottom = "5px solid " + tool_options["pen"].strokeStyle;
@@ -575,5 +656,4 @@ document.querySelector("#btnCalligraphy").style.borderBottom = "5px solid " + to
 document.querySelector("#btnHighlight").style.borderBottom = "5px solid " + tool_options["highlighter"].strokeStyle;
 document.querySelector("#bgcolor").style.backgroundColor = "white"
 document.querySelector("#bgcolor").style.color = tool_options["pen"].strokeStyle;
-
 createNewPage();
