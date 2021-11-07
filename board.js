@@ -281,12 +281,16 @@ document.querySelector("#file_importer").addEventListener("change", function (ev
         }
         else
         {
-            let img = new Image;
-            img.onload = function () {
-                insertPage(pageIndex + 1, img, img);
-                img.onload = null;
-            };
-            img.src = URL.createObjectURL(file_urls[i]);
+            const fileReader = new FileReader();
+            fileReader.onload = function () {
+                const img = new Image;
+                img.onload = function () {
+                    insertPage(pageIndex + 1, img, img);
+                    img.onload = null;
+                };
+                img.src = fileReader.result;
+            }
+            fileReader.readAsDataURL(file_urls[i]);
         }
     }
 });
@@ -476,10 +480,9 @@ function navigateTo(target_page) {
     //load selected page onto the canvas
     cnvs.width = pages[target_page].firstChild.naturalWidth;
     cnvs.height = pages[target_page].firstChild.naturalHeight;
-    //cnvs.style.width = cnvs.width * zoomRatio + "px";
-    //cnvs.style.height = cnvs.height * zoomRatio + "px";
     cnvs.style.backgroundColor = pages[target_page].style.backgroundColor;
     cnvs.style.backgroundImage = pages[target_page].style.backgroundImage;
+    document.querySelector("#btnExtend").disabled = Boolean(cnvs.style.backgroundImage);
     document.querySelector('#bgcolor').style.backgroundColor = pages[target_page].style.backgroundColor;
     ctx.drawImage(pages[target_page].firstChild, 0, 0);
     doSmartZoom();
@@ -516,13 +519,11 @@ document.addEventListener("keydown", function (e){
         e.preventDefault();
         return false;
     }
-
 });
 
 document.querySelector("#toolbox").addEventListener("keydown", (e)=>{
     //prevent bubbling keydown event
     e.stopPropagation();
-
 });
 
 function scrollThumbnailsToActivePage()
@@ -571,6 +572,7 @@ function configureCanvas()
     //ctx.translate(0.5, 0.5);
     // Normalize coordinate system to use scaled pixels.
     ctx.scale(1 / zoomRatio, 1 / zoomRatio);
+    load_options(selected_tool);
 }
 
 function scaleCanvas(ratio)
@@ -585,17 +587,19 @@ function scaleCanvas(ratio)
 function scaleToFill()
 {
     //fit canvas to workspace width
+    cnvs.parentElement.style.overflow = "hidden"; //don't include scrollbar width in area calculations
     let ratio = cnvs.parentElement.clientWidth / (cnvs.width);
     if (ratio * cnvs.height > cnvs.parentElement.clientHeight) {
-        cnvs.parentElement.style.overflowY = "scroll";
+        cnvs.parentElement.style.overflowY = "scroll"; // include a vertical scrollbar
         ratio = cnvs.parentElement.clientWidth / (cnvs.width);
-        cnvs.parentElement.style.overflowY = "auto";
     }
+    cnvs.parentElement.style.overflow = "auto";
     scaleCanvas(ratio);
 }
 
 function scaleToFit()
 {
+    cnvs.parentElement.style.overflow = "hidden"; //don't include scrollbar width in area calculations
     let scaleHeight = cnvs.parentElement.clientHeight / (cnvs.height);
     let scaleWidth = cnvs.parentElement.clientWidth / (cnvs.width)
     if (scaleWidth < scaleHeight)
@@ -603,7 +607,6 @@ function scaleToFit()
         if (scaleWidth * cnvs.height > cnvs.parentElement.clientHeight) {
             cnvs.parentElement.style.overflowY = "scroll";
             scaleWidth = cnvs.parentElement.clientWidth / (cnvs.width);
-            cnvs.parentElement.style.overflowY = "auto";
         }
         scaleCanvas(scaleWidth);
     }
@@ -612,10 +615,10 @@ function scaleToFit()
         if (scaleHeight * cnvs.width > cnvs.parentElement.clientWidth) {
             cnvs.parentElement.style.overflowX = "scroll";
             scaleHeight = cnvs.parentElement.clientHeight / (cnvs.height);
-            cnvs.parentElement.style.overflowX = "auto";
         }
         scaleCanvas(scaleHeight);
     }
+    cnvs.parentElement.style.overflow = "auto";
 }
 
 function doSmartZoom()
@@ -649,8 +652,41 @@ document.querySelectorAll("#zoom_list button").forEach(z=> {
     });
 });
 
+document.querySelector("#btnFullScreen").addEventListener("click", e=>{
+    if (document.fullscreenEnabled)
+    {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+    else
+    {
+        alert("Your browser doesn't support switching to fullscreen!")
+    }
+});
 
-load_options("pen");
+document.querySelector("#btnExtend").addEventListener("click", e=>{
+    let css_w = parseFloat(window.getComputedStyle(cnvs).width);
+    let css_h = parseFloat(window.getComputedStyle(cnvs).height);
+    let snapshot = ctx.getImageData(0, 0, cnvs.width, cnvs.height);
+    if (css_w < cnvs.parentElement.clientWidth)
+    {
+        cnvs.width *= cnvs.parentElement.clientWidth / css_w;
+        cnvs.style.width = cnvs.width * zoomRatio + "px";
+    }
+    if (css_h < cnvs.parentElement.clientHeight)
+    {
+        cnvs.height *= cnvs.parentElement.clientHeight / css_h;
+        cnvs.style.height = cnvs.height * zoomRatio + "px";
+    }
+    ctx.putImageData(snapshot, 0, 0);
+    configureCanvas();
+});
+
 document.querySelector("#btnPen").style.borderBottom = "5px solid " + tool_options["pen"].strokeStyle;
 document.querySelector("#btnCalligraphy").style.borderBottom = "5px solid " + tool_options["calligraphy"].strokeStyle;
 document.querySelector("#btnHighlight").style.borderBottom = "5px solid " + tool_options["highlighter"].strokeStyle;

@@ -1,6 +1,8 @@
 #board {
     background-color: #fff;
     background-size: contain;
+    background-repeat: no-repeat;
+    transform-origin: top left;
     box-shadow: 2px 2px 3px black;
     display: block;
     width: 100%;
@@ -76,7 +78,7 @@ body.dark button:hover{
     box-shadow: 0 1px 0px black;
 }
 
-.btn:hover{
+.btn:hover:not([disabled]){
     background-color: white;
 }
 
@@ -238,6 +240,7 @@ body.dark button:hover{
 }
 
 #thumbs div img {
+    display: block;
     width: 100%;
     margin: 0;
 }
@@ -255,4 +258,11 @@ body.dark button:hover{
     grid-column-end: 3;
     grid-row-start: 1;
     grid-row-end: 3;
+}
+
+#status
+{
+    max-width: 150px;
+    overflow:hidden;
+    white-space: nowrap;
 }
