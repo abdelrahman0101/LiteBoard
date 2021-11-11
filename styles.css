@@ -266,3 +266,25 @@ body.dark button:hover{
     overflow:hidden;
     white-space: nowrap;
 }
+
+@media print {
+    #toolbox, #board_container, #pageCounter{
+        display: none;
+    }
+
+    body{
+        display: block;
+    }
+
+    #thumbs {
+        border: none;
+        overflow: visible;
+    }
+
+    #thumbs div, #thumbs div.active{
+        border: none;
+        box-shadow: none;
+        margin-bottom: 10px;
+        page-break-after: always;
+    }
+}
