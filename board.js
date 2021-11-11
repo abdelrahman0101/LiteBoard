@@ -87,13 +87,17 @@ cnvs.addEventListener("pointerdown", function (event) {
 });
 
 cnvs.addEventListener('pointermove', function (event) {
+    if (event.touches && event.touches.length > 0) // no multitouch
+        return;
     var x = (event.clientX - cnvs.getBoundingClientRect().left);
     var y = (event.clientY - cnvs.getBoundingClientRect().top);
     //showStatus("X: " + Math.round(x) + ", Y: " + Math.round(y));
     if (drawing) {
-        //console.log("Pen pressure: " + event.pressure);
+        console.log("Pen pressure: " + event.pressure);
         let last_point = current_path[current_path.length-1];
-        const pressure = (event.pressure + 0.25); // default pressure is 0.5 when pressure sensitivity is not supported
+        // default pressure is 0.5 when pressure sensitivity is not supported
+        // some browsers fail to detect pressure and report a value of 0 (e.g. Firefox with windows ink enabled)
+        const pressure = (event.pressure)? event.pressure + 0.5 : 1;
         if (selected_tool === "pen") {
             ctx.lineWidth = lineWidth * pressure;
             ctx.lineTo(x, y);
