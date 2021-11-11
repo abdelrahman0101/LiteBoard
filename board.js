@@ -25,7 +25,6 @@ var tool_options = {
     },
     "calligraphy": {
         lineWidth: 3,
-        strokeStyle: '#000000',
         alpha: 1,
         angle: Math.PI / 9
     },
@@ -39,6 +38,18 @@ var tool_options = {
         strokeStyle: '#FFFFFF', // color is irrelevant, but needs to be opaque
         alpha: 1
     },
+    "line": {
+        lineWidth: 2,
+        alpha: 1
+    },
+    "rectangle": {
+        lineWidth: 2,
+        alpha: 1
+    },
+    "ellipse": {
+        lineWidth: 2,
+        alpha: 1
+    }
 
 };
 
@@ -46,6 +57,7 @@ var pages = [];
 var pageIndex = -1;
 
 let current_path = [];
+let temp_img = null;
 
 cnvs.addEventListener("contextmenu", function (e){
     //disable rightclick menu on the canvas
@@ -59,6 +71,14 @@ cnvs.addEventListener("pointerdown", function (event) {
     var y = event.clientY - cnvs.getBoundingClientRect().top;
     ctx.beginPath();
     ctx.moveTo(x, y);
+    switch (selected_tool)
+    {
+        case "line":
+        case "rectangle":
+        case "ellipse":
+            temp_img = ctx.getImageData(0, 0, cnvs.width, cnvs.height);
+            break;
+    }
     current_path = [];
     current_path.push({x: x, y: y, lineWidth: lineWidth});
     ctx.lineWidth = lineWidth; // set line width according to the settings of the selected tool
@@ -72,18 +92,19 @@ cnvs.addEventListener('pointermove', function (event) {
     //showStatus("X: " + Math.round(x) + ", Y: " + Math.round(y));
     if (drawing) {
         //console.log("Pen pressure: " + event.pressure);
-        //const pressure = (event.pressure + 0.5);
+        let last_point = current_path[current_path.length-1];
+        const pressure = (event.pressure + 0.25); // default pressure is 0.5 when pressure sensitivity is not supported
         if (selected_tool === "pen") {
+            ctx.lineWidth = lineWidth * pressure;
             ctx.lineTo(x, y);
             ctx.stroke();
             current_path.push({x: x, y: y, lineWidth: lineWidth});
         }
         else if (selected_tool === "calligraphy")
         {
-            let last_point = current_path[current_path.length-1];
             let dist1 = Math.sqrt(Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2));
             // modify lineWidth acceleration for smoothing
-            let newWidth = 0.5 * lineWidth / (dist1) + 0.5 * ctx.lineWidth
+            let newWidth = 0.5 * pressure * lineWidth / (dist1) + 0.5 * ctx.lineWidth
             // ctx.lineWidth is capped so it will not accept infinity
             ctx.lineWidth = newWidth;
             ctx.lineTo(x, y);
@@ -92,20 +113,45 @@ cnvs.addEventListener('pointermove', function (event) {
             ctx.scale(0.1, 1);
             ctx.stroke();
             ctx.setTransform(trans_mat); //restore transformations
-            current_path.push({x: x, y: y, lineWidth: newWidth});
+            current_path.push({x: x, y: y, lineWidth: ctx.lineWidth});
         }
         else if (selected_tool === "eraser") {
             ctx.lineTo(x, y);
             ctx.stroke();
         }
         else if (selected_tool === "highlighter"){
-            let last_point = current_path[current_path.length-1];
             let dist = Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2);
             if (dist > ctx.lineWidth * 5) {
                 current_path.push({x: x, y: y});
                 ctx.lineTo(x, y);
                 ctx.stroke();
             }
+        }
+        else if (selected_tool === 'line')
+        {
+            ctx.clearRect(0, 0, cnvs.width, cnvs.height);
+            ctx.putImageData(temp_img, 0, 0, 0, 0, cnvs.width, cnvs.height);
+            ctx.beginPath();
+            ctx.moveTo(last_point.x, last_point.y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+        else if (selected_tool === 'rectangle')
+        {
+            ctx.clearRect(0, 0, cnvs.width, cnvs.height);
+            ctx.putImageData(temp_img, 0, 0, 0, 0, cnvs.width, cnvs.height);
+            ctx.beginPath();
+            ctx.rect(last_point.x, last_point.y, x - last_point.x, y - last_point.y);
+            ctx.stroke();
+        }
+        else if (selected_tool === 'ellipse')
+        {
+            ctx.clearRect(0, 0, cnvs.width, cnvs.height);
+            ctx.putImageData(temp_img, 0, 0, 0, 0, cnvs.width, cnvs.height);
+            ctx.beginPath();
+            ctx.ellipse(last_point.x + (x - last_point.x)/2, last_point.y + (y - last_point.y)/2, Math.abs(x - last_point.x)/2, Math.abs(y - last_point.y)/2,
+                0, 0, Math.PI * 2, false);
+            ctx.stroke();
         }
     }
     event.preventDefault(); //disable browser gestures
@@ -119,7 +165,7 @@ cnvs.addEventListener("pointerup", function (e) {
 });
 
 cnvs.addEventListener("pointerout", function () {
-    showStatus("");
+    //showStatus("");
     drawing = false;
 });
 
@@ -130,24 +176,24 @@ function showStatus(txt) {
 
 document.querySelectorAll(".color").forEach(c => {
     c.addEventListener("click", function (event) {
-        var color = window.getComputedStyle(event.target).backgroundColor;
+        const color = window.getComputedStyle(event.target).backgroundColor;
         if (selected_tool === "eraser") {
             selected_tool = "pen";
             load_options("pen");
         }
         ctx.strokeStyle = color;
-        if (selected_tool === "pen" || selected_tool === "calligraphy") {
-            // both tools must have the same pen color for simplicity
+        ctx.fillStyle = color;
+        if (selected_tool === "highlighter") {
+            tool_options["highlighter"].strokeStyle = color;
+            document.querySelector("#btnHighlight").style.borderBottom = "5px solid " + color;
+        }
+        else {
+            // other tools must have the same pen color for simplicity
             tool_options["pen"].strokeStyle = color;
-            tool_options["calligraphy"].strokeStyle = color;
             document.querySelectorAll("#background_colors button").forEach(c => { c.style.color = color; });
             document.querySelector("#bgcolor").style.color = color;
             document.querySelector("#btnPen").style.borderBottom = "5px solid " + color;
             document.querySelector("#btnCalligraphy").style.borderBottom = "5px solid " + color;
-        }
-        else if (selected_tool === "highlighter") {
-            tool_options["highlighter"].strokeStyle = color;
-            document.querySelector("#btnHighlight").style.borderBottom = "5px solid " + color;
         }
     });
 });
@@ -258,6 +304,19 @@ document.querySelector("#float_screen").addEventListener("click", function (){
 
 document.querySelector("#btnHighlight").addEventListener("click", function () {
     load_options("highlighter");
+});
+
+document.querySelectorAll("#basic_shapes button").forEach(b=>{
+    b.addEventListener("click", e=>{
+        selected_tool = e.target.value;
+        load_options(selected_tool);
+        document.querySelector("#basic_shapes button.enabled").classList.remove("enabled");
+        e.target.classList.add("enabled");
+    });
+});
+
+document.querySelector("#btnShape").addEventListener("click", e=>{
+    document.querySelector("#basic_shapes button.enabled").click();
 });
 
 document.querySelector("#btnImport").addEventListener("click", function () {
@@ -462,7 +521,7 @@ function saveCurrentPage() {
 }
 
 function clearBoard() {
-    ctx.clearRect(0, 0, cnvs.clientWidth, cnvs.clientHeight);
+    ctx.clearRect(0, 0, cnvs.width, cnvs.height);
 }
 
 document.querySelector("#pgNumber").addEventListener("change", e=>{
@@ -550,7 +609,7 @@ function load_options(tool) {
     selected_tool = tool;
     lineWidth = tool_options[tool].lineWidth;
     document.querySelector("#sldWidth").value = tool_options[tool].lineWidth;
-    ctx.strokeStyle = tool_options[tool].strokeStyle;
+    ctx.strokeStyle = tool_options[tool].strokeStyle || tool_options["pen"].strokeStyle;
     ctx.globalAlpha = tool_options[tool].alpha;
 }
 
@@ -688,7 +747,7 @@ document.querySelector("#btnExtend").addEventListener("click", e=>{
 });
 
 document.querySelector("#btnPen").style.borderBottom = "5px solid " + tool_options["pen"].strokeStyle;
-document.querySelector("#btnCalligraphy").style.borderBottom = "5px solid " + tool_options["calligraphy"].strokeStyle;
+document.querySelector("#btnCalligraphy").style.borderBottom = "5px solid " + tool_options["pen"].strokeStyle;
 document.querySelector("#btnHighlight").style.borderBottom = "5px solid " + tool_options["highlighter"].strokeStyle;
 document.querySelector("#bgcolor").style.backgroundColor = "white"
 document.querySelector("#bgcolor").style.color = tool_options["pen"].strokeStyle;
