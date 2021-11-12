@@ -69,67 +69,56 @@ cnvs.addEventListener("pointerdown", function (event) {
     drawing = true;
     var x = event.clientX - cnvs.getBoundingClientRect().left;
     var y = event.clientY - cnvs.getBoundingClientRect().top;
+    // save existing image to restore it when needed
+    temp_img = ctx.getImageData(0, 0, cnvs.width, cnvs.height);
     ctx.beginPath();
     ctx.moveTo(x, y);
-    switch (selected_tool)
-    {
-        case "line":
-        case "rectangle":
-        case "ellipse":
-            temp_img = ctx.getImageData(0, 0, cnvs.width, cnvs.height);
-            break;
-    }
     current_path = [];
     current_path.push({x: x, y: y, lineWidth: lineWidth});
     ctx.lineWidth = lineWidth; // set line width according to the settings of the selected tool
-    event.preventDefault(); //disable browser gestures
+    const pressure = (event.pressure)? event.pressure + 0.5 : 1;
+    switch (selected_tool)
+    {
+        //draw first point
+        case "pen":
+            addPenPoint(x, y, pressure, x, y);
+            break;
+        case "calligraphy":
+            addCalligraphyPoint(x, y, pressure, x, y);
+            break;
+        case "highlighter":
+            addHighlighterPoint(x, y, pressure, x, y);
+            break;
+    }
     document.activeElement.blur();
+    event.preventDefault(); //disable browser gestures
+    return false;
 });
 
 cnvs.addEventListener('pointermove', function (event) {
-    if (event.touches && event.touches.length > 0) // no multitouch
+    if (event.touches && event.touches.length > 1) // no multitouch
         return;
-    var x = (event.clientX - cnvs.getBoundingClientRect().left);
-    var y = (event.clientY - cnvs.getBoundingClientRect().top);
     //showStatus("X: " + Math.round(x) + ", Y: " + Math.round(y));
     if (drawing) {
-        console.log("Pen pressure: " + event.pressure);
+        var x = (event.clientX - cnvs.getBoundingClientRect().left);
+        var y = (event.clientY - cnvs.getBoundingClientRect().top);
         let last_point = current_path[current_path.length-1];
         // default pressure is 0.5 when pressure sensitivity is not supported
         // some browsers fail to detect pressure and report a value of 0 (e.g. Firefox with windows ink enabled)
         const pressure = (event.pressure)? event.pressure + 0.5 : 1;
         if (selected_tool === "pen") {
-            ctx.lineWidth = lineWidth * pressure;
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            current_path.push({x: x, y: y, lineWidth: lineWidth});
+            addPenPoint(x, y, pressure, last_point);
         }
         else if (selected_tool === "calligraphy")
         {
-            let dist1 = Math.sqrt(Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2));
-            // modify lineWidth acceleration for smoothing
-            let newWidth = 0.5 * pressure * lineWidth / (dist1) + 0.5 * ctx.lineWidth
-            // ctx.lineWidth is capped so it will not accept infinity
-            ctx.lineWidth = newWidth;
-            ctx.lineTo(x, y);
-            let trans_mat = ctx.getTransform();
-            ctx.rotate(tool_options.calligraphy.angle);
-            ctx.scale(0.1, 1);
-            ctx.stroke();
-            ctx.setTransform(trans_mat); //restore transformations
-            current_path.push({x: x, y: y, lineWidth: ctx.lineWidth});
+            addCalligraphyPoint(x, y, pressure, last_point);
         }
         else if (selected_tool === "eraser") {
             ctx.lineTo(x, y);
             ctx.stroke();
         }
         else if (selected_tool === "highlighter"){
-            let dist = Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2);
-            if (dist > ctx.lineWidth * 5) {
-                current_path.push({x: x, y: y});
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            }
+            addHighlighterPoint(x, y, pressure, last_point);
         }
         else if (selected_tool === 'line')
         {
@@ -159,18 +148,130 @@ cnvs.addEventListener('pointermove', function (event) {
         }
     }
     event.preventDefault(); //disable browser gestures
+    return false;
 });
 
+function addPenPoint(x, y, pressure, last_point)
+{
+    ctx.lineWidth = lineWidth * pressure ;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath(); // need to begin a new path to use a different lineWidth
+    ctx.moveTo(x, y);
+    current_path.push({x: x, y: y, lineWidth: lineWidth * pressure});
+}
+
+function drawSmoothPen(path)
+{
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (var i = 1; i < path.length - 2; i++) {
+        let px = (path[i].x + path[i + 1].x) / 2;
+        let py = (path[i].y + path[i + 1].y) / 2;
+        ctx.quadraticCurveTo(path[i].x, path[i].y, px, py);
+        ctx.lineWidth = (path[i].lineWidth + path[i+1].lineWidth) / 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+    }
+    ctx.quadraticCurveTo(path[i].x, path[i].y, path[i + 1].x, path[i + 1].y);
+    ctx.lineWidth = (path[i].lineWidth + path[i+1].lineWidth) / 2;
+    ctx.stroke();
+}
+
+function getNormalizedDistance(dist)
+{
+    return Math.min(lineWidth, lineWidth / dist);
+}
+
+function addCalligraphyPoint(x, y, pressure, last_point)
+{
+    let dist = Math.sqrt(Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2));
+    // modify lineWidth acceleration for smoothing
+    let newWidth = 0.5 * pressure * getNormalizedDistance(dist) + 0.5 * ctx.lineWidth;
+    // ctx.lineWidth is capped so it will not accept infinity
+    ctx.lineWidth = newWidth;
+    ctx.lineTo(x, y);
+    let trans_mat = ctx.getTransform();
+    ctx.rotate(tool_options.calligraphy.angle);
+    ctx.scale(0.1, 1);
+    ctx.stroke();
+    ctx.setTransform(trans_mat); //restore transformations
+    current_path.push({x: x, y: y, lineWidth: newWidth});
+}
+
+function drawSmoothCalligraphy(path)
+{
+    //experimental **disabled
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (var i = 1; i < path.length - 2; i++) {
+        let px = (path[i].x + path[i + 1].x) / 2;
+        let py = (path[i].y + path[i + 1].y) / 2;
+        ctx.quadraticCurveTo(path[i].x, path[i].y, px, py);
+        ctx.lineWidth = (path[i - 1].lineWidth + path[i].lineWidth + path[i + 1].lineWidth) / 3;
+        console.log(lineWidth);
+        let trans_mat = ctx.getTransform();
+        ctx.rotate(tool_options.calligraphy.angle);
+        ctx.scale(0.1, 1);
+        ctx.stroke();
+        ctx.setTransform(trans_mat); //restore transformations
+        //ctx.beginPath();
+        //ctx.moveTo(px, py);
+    }
+    ctx.quadraticCurveTo(path[i].x, path[i].y, path[i + 1].x, path[i + 1].y);
+    ctx.lineWidth = (path[i].lineWidth + path[i+1].lineWidth) / 2;
+    console.log(lineWidth);
+    let trans_mat = ctx.getTransform();
+    ctx.rotate(tool_options.calligraphy.angle);
+    ctx.scale(0.1, 1);
+    ctx.stroke();
+    ctx.setTransform(trans_mat); //restore transformations
+}
+
+function addHighlighterPoint(x, y, pressure, last_point)
+{
+    // TODO: control opacity based on pressure
+    let dist = Math.pow(x - last_point.x, 2) + Math.pow(y - last_point.y, 2);
+    if (dist > ctx.lineWidth * 5) {
+        current_path.push({x: x, y: y});
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    }
+}
+
+function finishDrawing()
+{
+    if (!drawing)
+        return;
+    drawing = false;
+    if (current_path.length > 2)
+    {
+        //make lines smoother
+        if (selected_tool === "pen") {
+            ctx.clearRect(0, 0, cnvs.width, cnvs.height);
+            ctx.putImageData(temp_img, 0, 0, 0, 0, cnvs.width, cnvs.height);
+            drawSmoothPen(current_path);
+        }
+        else if (selected_tool === "calligraphy")
+        {
+            ctx.clearRect(0, 0, cnvs.width, cnvs.height);
+            ctx.putImageData(temp_img, 0, 0, 0, 0, cnvs.width, cnvs.height);
+            drawSmoothCalligraphy(current_path);
+        }
+    }
+    saveCurrentPage();
+}
 
 cnvs.addEventListener("pointerup", function (e) {
-    drawing = false;
-    saveCurrentPage();
+    finishDrawing();
     e.preventDefault(); //disable browser gestures
+    return false;
 });
 
 cnvs.addEventListener("pointerout", function () {
     //showStatus("");
-    drawing = false;
+    finishDrawing();
 });
 
 function showStatus(txt) {
@@ -232,7 +333,6 @@ document.querySelector("#btnSave").addEventListener("click", function () {
     merged.width = cnvs.width;
     merged.height = cnvs.height;
     mrg_ctx.fillStyle = cnvs.style.backgroundColor || "#fff";
-    console.log(mrg_ctx.fillStyle);
     mrg_ctx.fillRect(0, 0, merged.width, merged.height);
     if (cnvs.style.backgroundImage) {
         let background = new Image();
@@ -316,11 +416,14 @@ document.querySelectorAll("#basic_shapes button").forEach(b=>{
         load_options(selected_tool);
         document.querySelector("#basic_shapes button.enabled").classList.remove("enabled");
         e.target.classList.add("enabled");
+        hideDropdownLists();
     });
 });
 
 document.querySelector("#btnShape").addEventListener("click", e=>{
-    document.querySelector("#basic_shapes button.enabled").click();
+    let shape = document.querySelector("#basic_shapes button.enabled");
+    selected_tool = shape.value;
+    load_options(selected_tool);
 });
 
 document.querySelector("#btnImport").addEventListener("click", function () {
@@ -697,8 +800,6 @@ function doSmartZoom()
 
 document.querySelectorAll("#zoom_list button").forEach(z=> {
     z.addEventListener("click", e => {
-        console.log("Canvas:", cnvs.width, cnvs.height);
-        console.log("Workspace:", cnvs.parentElement.clientWidth, cnvs.parentElement.clientHeight);
         if (e.target.value === 'w')
         {
             scaleToFill();
