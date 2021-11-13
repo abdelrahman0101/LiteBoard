@@ -163,6 +163,7 @@ function addPenPoint(x, y, pressure, last_point)
 
 function drawSmoothPen(path)
 {
+    path = simplifyPath(path);
     ctx.beginPath();
     ctx.moveTo(path[0].x, path[0].y);
     for (var i = 1; i < path.length - 2; i++) {
@@ -181,7 +182,7 @@ function drawSmoothPen(path)
 
 function getNormalizedDistance(dist)
 {
-    return Math.min(lineWidth, lineWidth / dist);
+    return Math.min(lineWidth, lineWidth / (2 * dist));
 }
 
 function addCalligraphyPoint(x, y, pressure, last_point)
@@ -202,15 +203,14 @@ function addCalligraphyPoint(x, y, pressure, last_point)
 
 function drawSmoothCalligraphy(path)
 {
-    //experimental **disabled
+    path = simplifyPath(path);
     ctx.beginPath();
     ctx.moveTo(path[0].x, path[0].y);
     for (var i = 1; i < path.length - 2; i++) {
         let px = (path[i].x + path[i + 1].x) / 2;
         let py = (path[i].y + path[i + 1].y) / 2;
         ctx.quadraticCurveTo(path[i].x, path[i].y, px, py);
-        ctx.lineWidth = (path[i - 1].lineWidth + path[i].lineWidth + path[i + 1].lineWidth) / 3;
-        console.log(lineWidth);
+        ctx.lineWidth = (path[i + -1].lineWidth + path[i].lineWidth + path[i + 1].lineWidth) / 3;
         let trans_mat = ctx.getTransform();
         ctx.rotate(tool_options.calligraphy.angle);
         ctx.scale(0.1, 1);
@@ -221,12 +221,38 @@ function drawSmoothCalligraphy(path)
     }
     ctx.quadraticCurveTo(path[i].x, path[i].y, path[i + 1].x, path[i + 1].y);
     ctx.lineWidth = (path[i].lineWidth + path[i+1].lineWidth) / 2;
-    console.log(lineWidth);
     let trans_mat = ctx.getTransform();
     ctx.rotate(tool_options.calligraphy.angle);
     ctx.scale(0.1, 1);
     ctx.stroke();
     ctx.setTransform(trans_mat); //restore transformations
+}
+
+function simplifyPath(path)
+{
+    //TODO: Use a better algorithm
+    if (path.length < 3)
+        return;
+    let i=0;
+    let m1 = (path[1].y - path[0].y) / (path[1].x - path[0].x); // slope to next point
+    while (i < path.length - 2)
+    {
+        let m2 = (path[i+2].y - path[i+1].y) / (path[i+2].x - path[i+1].x); // slope to second nearest point
+        d1 = Math.sqrt(Math.pow(path[i+1].y - path[i].y, 2) + Math.pow(path[i+1].x - path[i].x, 2));
+        d2 = Math.sqrt(Math.pow(path[i+2].y - path[i].y, 2) + Math.pow(path[i+2].x - path[i].x, 2));
+        if (Math.abs(m1 - m2) < 0.02 && d2 > d1) // on the same line and not a turning point
+        {
+            // remove the point if it's almost on the same line
+            path[i].lineWidth = (path[i].lineWidth + path[i + 1].lineWidth) / 2;
+            path[i + 2].lineWidth = (path[i + 1].lineWidth + path[i + 2].lineWidth) / 2;
+            path.splice(i + 1, 1);
+        }
+        else {
+            i++;
+            m1 = (path[i+1].y - path[i].y) / (path[i+1].x - path[i].x); // slope to nearest point
+        }
+    }
+    return path;
 }
 
 function addHighlighterPoint(x, y, pressure, last_point)
