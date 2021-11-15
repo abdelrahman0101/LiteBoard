@@ -286,5 +286,7 @@ body.dark button:hover{
         box-shadow: none;
         margin-bottom: 10px;
         page-break-after: always;
+        color-adjust: exact; !important;
+        -webkit-print-color-adjust: exact; !important;
     }
 }
