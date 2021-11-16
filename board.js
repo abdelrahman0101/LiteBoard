@@ -643,7 +643,7 @@ function createNewPage() {
     pageIndex++;
     const img = new Image();
     img.src = cnvs.toDataURL();
-    insertPage(pageIndex, img);
+    insertPage(pageIndex, img, null, cnvs.style.backgroundColor);
     setActivePage(pageIndex);
 }
 
