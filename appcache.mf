@@ -1,0 +1,6 @@
+CACHE MANIFEST
+board.html
+board.js
+styles.css
+/fontawesome-free-5.15.4-web/css/all.min.css
+/pdfjs-2.10.377-dist/build/pdf.js

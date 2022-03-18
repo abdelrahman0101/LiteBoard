@@ -1,10 +1,11 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" manifest="">
 <head>
     <meta charset="UTF-8">
     <title>Opelea Whiteboard</title>
     <link rel="stylesheet" href="styles.css"/>
-    <link href="fontawesome-free-5.15.4-web/css/all.css" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link href="fontawesome-free-5.15.4-web/css/all.min.css" rel="stylesheet">
 </head>
 <body class="">
     <div id="toolbox">
@@ -115,6 +116,11 @@
     </div>
     <div id="float_screen">
 
+    </div>
+    <div id="message">
+        <p></p>
+        <button>Yes</button>
+        <button>No</button>
     </div>
     <script src="./pdfjs-2.10.377-dist/build/pdf.js"></script>
     <script src="board.js"></script>

@@ -390,6 +390,9 @@ document.querySelector("#btnEraser").addEventListener("click", function () {
 
 document.querySelector("#btnClear").addEventListener("click", function () {
     // TODO: need confirmation first
+    res = confirm("Are you sure you want to clear all annotation on this page?");
+    if (!res)
+        return;
     clearBoard();
     saveCurrentPage();
 });

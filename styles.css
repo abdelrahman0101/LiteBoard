@@ -267,6 +267,11 @@ body.dark button:hover{
     white-space: nowrap;
 }
 
+#message 
+{
+    display: none;
+}
+
 @media print {
     #toolbox, #board_container, #pageCounter{
         display: none;
