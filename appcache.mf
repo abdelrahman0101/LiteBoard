@@ -1,6 +1,9 @@
 CACHE MANIFEST
+#version 1.0
 board.html
 board.js
 styles.css
 /fontawesome-free-5.15.4-web/css/all.min.css
+/fontawesome-free-5.15.4-web/webfonts/fa-regular-400.woff
+/fontawesome-free-5.15.4-web/webfonts/fa-solid-400.woff
 /pdfjs-2.10.377-dist/build/pdf.js
