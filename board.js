@@ -1,5 +1,5 @@
 var cnvs = document.querySelector("#board");
-var ctx = cnvs.getContext("2d");
+var ctx = cnvs.getContext("2d", {desynchronized: true});
 var lineWidth = 2;
 //ctx.translate(0.5, 0.5);
 const resolution_scale = 2.0; // 1.0;
@@ -76,7 +76,7 @@ cnvs.addEventListener("pointerdown", function (event) {
     current_path = [];
     current_path.push({x: x, y: y, lineWidth: lineWidth});
     ctx.lineWidth = lineWidth; // set line width according to the settings of the selected tool
-    const pressure = (event.pressure)? event.pressure + 0.5 : 1;
+    const pressure = (isFinite(event.pressure))? event.pressure + 0.5 : 1;
     switch (selected_tool)
     {
         //draw first point
@@ -105,7 +105,9 @@ cnvs.addEventListener('pointermove', function (event) {
         let last_point = current_path[current_path.length-1];
         // default pressure is 0.5 when pressure sensitivity is not supported
         // some browsers fail to detect pressure and report a value of 0 (e.g. Firefox with windows ink enabled)
-        const pressure = (event.pressure)? event.pressure + 0.5 : 1;
+        const pressure = (isFinite(event.pressure))? event.pressure + 0.5 : 1;
+        //console.log("pressure:", pressure);
+
         if (selected_tool === "pen") {
             addPenPoint(x, y, pressure, last_point);
         }
@@ -182,7 +184,7 @@ function drawSmoothPen(path)
 
 function getNormalizedDistance(dist)
 {
-    return Math.min(lineWidth, lineWidth / (2 * dist));
+    return Math.min(lineWidth, lineWidth / (dist));
 }
 
 function addCalligraphyPoint(x, y, pressure, last_point)
